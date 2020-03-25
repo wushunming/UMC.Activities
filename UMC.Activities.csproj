@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Description></Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Subject\**" />
+    <EmbeddedResource Remove="Subject\**" />
+    <None Remove="Subject\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Activities\SystemLogActivity.cs" />
+    <Compile Remove="Activities\SystemSetupActivity.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\app.json" />
+    <None Remove="Resources\index.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\app.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WebADNuke.Data\UMC.Data.csproj" />
+  </ItemGroup>
+
+</Project>

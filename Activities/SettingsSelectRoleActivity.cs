@@ -1,0 +1,43 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Text;
+using UMC.Data;
+using UMC.Data.Entities;
+using UMC.Web;
+
+namespace UMC.Activities
+{
+    /// <summary>
+    /// 
+    /// </summary>
+    [Mapping("Settings", "SelectRole", Auth = WebAuthType.Admin, Desc = "查找用户", Category = 1)]
+    public class SettingsSelectRoleActivity : WebActivity
+    {
+        ListItem User()
+        {
+
+            var Username = this.AsyncDialog("Role", g => new RoleDialog()
+            {
+                CloseEvent = "UI.Event",
+                IsPage = true,
+                Title = "选择角色",
+                IsSearch = true
+            });
+
+
+            var role = UMC.Data.Database.Instance().ObjectEntity<Role>()
+                .Where.And().Equal(new Role { Id = new Guid(Username) }).Entities.Single();
+            return new ListItem(role.Rolename, role.Rolename);
+        }
+
+        public override void ProcessActivity(WebRequest request, WebResponse response)
+        {
+            var key = this.AsyncDialog("Key", g => this.DialogValue("Promotion"));
+
+            this.Context.Send(new UMC.Web.WebMeta().UIEvent(key, this.User()), true);
+        }
+
+    }
+}
