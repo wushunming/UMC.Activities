@@ -224,12 +224,12 @@ namespace UMC.Activities
                                     .Entities.Query(dr =>
                                     {
 
-                                        tabs.Add(new UMC.Web.WebMeta().Put("text", dr.ItemName).Put("search", new UMC.Web.WebMeta().Put("Id", dr.Id.ToString())).Put("cmd", "Home", "model", "Design"));
+                                        tabs.Add(new UMC.Web.WebMeta().Put("text", dr.ItemName).Put("search", new UMC.Web.WebMeta().Put("Id", dr.Id.ToString())).Put("cmd", "Home", "model", "UI"));
 
                                     });
                             if (tabs.Count == 1)
                             {
-                                UISectionBuilder builder = new UISectionBuilder("Design", "Home", new WebMeta().Put("Id", tabs[0].GetMeta("search").Get("Id")));
+                                UISectionBuilder builder = new UISectionBuilder("UI", "Home", new WebMeta().Put("Id", tabs[0].GetMeta("search").Get("Id")));
                                 //                            builder.builder()
                                 this.Context.Send(builder.Builder(), true);//"Tab", new WebMeta().put("sections", tabs).put("text", "UMC界面设计"), true);
 

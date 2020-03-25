@@ -5,7 +5,7 @@ using UMC.Web;
 
 namespace UMC.Activities
 {
-    [Mapping("UI", Auth = WebAuthType.User, Desc = "UI页面")]
+    [Mapping("UI", Auth = WebAuthType.All, Desc = "UI页面")]
     class UIFlow : WebFlow
     {
         public override WebActivity GetFirstActivity()
