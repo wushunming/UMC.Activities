@@ -278,7 +278,7 @@ namespace UMC.Activities
                     List<WebMeta> tabs = new List<WebMeta>();
                     entity.Query(dr =>
                     {
-                        tabs.Add(new UMC.Web.WebMeta().Put("text", dr.ItemName).Put("search", new UMC.Web.WebMeta().Put("Id", dr.Id)).Put("cmd", "Page", "model", "Design"));
+                        tabs.Add(new UMC.Web.WebMeta().Put("text", dr.ItemName).Put("search", new UMC.Web.WebMeta().Put("Id", dr.Id)).Put("cmd", "Home", "model", "UI"));
 
                     });
 

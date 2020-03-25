@@ -384,7 +384,7 @@ namespace UMC.Activities
 
             if (b != null)
             {
-                Sliders(b, groups.FindAll(it => it.for_id == b.Id), Us);
+                Sliders(b, items.FindAll(it => it.for_id == b.Id), Us);
             }
 
 
