@@ -68,6 +68,7 @@ namespace UMC.Activities
 
         void Delete(Guid uuid)
         {
+
             var entity = Database.Instance().ObjectEntity<Design_Item>();
             entity.Where.And().Equal(new Design_Item { design_id = uuid });
             if (entity.Count() > 0)
@@ -159,7 +160,7 @@ namespace UMC.Activities
                             , new UMC.Web.WebMeta().Put("desc", "{icon}\n{desc}"),
                                 new UIStyle().Align(1).Color(0xaaa).Padding(20, 20).BgColor(0xfff).Size(12).Name("icon", new UIStyle().Font("wdk").Size(60)));
                     }
-                    UIFooter footer = new UIFooter();
+                    UIFootBar footer = new UIFootBar();
                     footer.IsFixed = true;// e);
 
                     switch (headers.Length)
@@ -188,7 +189,7 @@ namespace UMC.Activities
                     }
 
 
-                    section.UIFooter = (footer);
+                    section.UIFootBar = (footer);
                     response.Redirect(section);
                     return this.DialogValue("none");
                 });
@@ -250,7 +251,7 @@ namespace UMC.Activities
 
                                 UIFormDialog fm = new UMC.Web.UIFormDialog();
                                 fm.Title = ("移动效果体验");
-                                fm.AddImage(new Uri(UMC.Data.Utility.QRUrl("https://oss.365lu.cn/Click/UI/Home/")));
+                                fm.AddImage(new Uri(UMC.Data.Utility.QRUrl(Data.WebResource.Instance().WebDomain() + "Click/UI/Home/")));
 
 
                                 fm.AddPrompt("请用支持UMC协议的APP“扫一扫”。");
@@ -270,7 +271,22 @@ namespace UMC.Activities
 
                 if (designId == Guid.Empty)
                 {
+                    var Name = this.AsyncDialog("Name", "none");
+                    switch (Name)
+                    {
+                        case "none":
 
+                            break;
+                        default:
+
+                            var item = Database.Instance().ObjectEntity<Design_Item>()
+                                 .Where.And().Equal(new Design_Item { design_id = Guid.Empty, for_id = Guid.Empty, ItemName = Name })
+                                 .Entities.Single() ?? new Design_Item() { Id = Utility.Guid(Name, true), ItemName = Name };
+
+                            UIDesigner designer = new UIDesigner(false);
+                            response.Redirect(designer.Section(item.ItemName, item.Id.Value));
+                            break;
+                    }
                     var entity = Database.Instance().ObjectEntity<Design_Item>();
                     entity.Where.And().Equal(new Design_Item { design_id = Guid.Empty, for_id = Guid.Empty });
                     entity.Order.Asc(new Design_Item { Seq = 0 });

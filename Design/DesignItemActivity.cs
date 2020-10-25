@@ -102,7 +102,7 @@ namespace UMC.Activities
                 from.Title = ("图标");
 
                 from.AddFile("图片", "_Image", webr.ImageResolve(finalItem.Id.Value, "1", 4))
-                        .Command("Design", "Image", new UMC.Web.WebMeta().Put("id", finalItem.Id).Put("seq", "1"));
+                        .Command("Design", "Picture", new UMC.Web.WebMeta().Put("id", finalItem.Id).Put("seq", "1"));
                 from.AddText("标题", "ItemName", finalItem.ItemName);
 
                 from.AddNumber("顺序", "Seq", finalItem.Seq);
@@ -176,7 +176,7 @@ namespace UMC.Activities
                 UIFormDialog from = new UIFormDialog();
                 from.Title = ("图标");
                 from.AddFile("图片", "_Image", webr.ImageResolve(finalItem.Id.Value, "1", 4))
-                        .Command("Design", "Image", new UMC.Web.WebMeta().Put("id", finalItem.Id).Put("seq", "1"));
+                        .Command("Design", "Picture", new UMC.Web.WebMeta().Put("id", finalItem.Id).Put("seq", "1"));
                 from.AddText("标题", "title", finalItem.ItemName);
                 from.AddText("描述", "desc", finalItem.ItemDesc);
                 from.Add("Color", "startColor", "标题开始色", data.Get("startColor"));
@@ -274,7 +274,7 @@ namespace UMC.Activities
 
                 from.AddFile(String.Format("{0}比例图片", total == "1" ? "100:55" : "1:1"), "_Image",
                                 webr.ImageResolve(item.Id.Value, "1", 4))
-                                .Command("Design", "Image", new UMC.Web.WebMeta().Put("id", item.Id).Put("seq", "1"));
+                                .Command("Design", "Picture", new UMC.Web.WebMeta().Put("id", item.Id).Put("seq", "1"));
                 String hide = config.Get("Hide") ?? "";
                 if (hide.IndexOf("HideTitle") == -1)
                     from.AddText("图文标题", "title", item.ItemName);
@@ -387,13 +387,22 @@ namespace UMC.Activities
                                 String config = data.Get("Config");
                                 if (String.IsNullOrEmpty(config) == false && config.StartsWith("UI"))
                                 {
-                                    this.Context.Response.Redirect("Design", config);
+                                    if (config.StartsWith("UI"))
+                                    {
+
+                                        this.Context.Response.Redirect("Design", config);
+                                    }
+                                    var d = config.IndexOf('.');
+                                    if (d > 0)
+                                    {
+                                        this.Context.Response.Redirect("Design", config.Substring(d + 1));
+                                    }
+
 
                                 }
-                                else
-                                {
-                                    this.Prompt("参数错误");
-                                }
+
+                                this.Prompt("参数错误");
+
                                 break;
                             default:
                                 this.Prompt("参数错误");
@@ -477,7 +486,7 @@ namespace UMC.Activities
                             size = String.Format("参考尺寸:{0}", size);
                         }
                         from.AddFile(size, "_Image", webr.ResolveUrl(String.Format("{0}{1}/1/0.jpg!100", UMC.Data.WebResource.ImageResource, item.Id)))
-                        .Command("Design", "Image", new UMC.Web.WebMeta().Put("id", item.Id).Put("seq", "1"));
+                        .Command("Design", "Picture", new UMC.Web.WebMeta().Put("id", item.Id).Put("seq", "1"));
 
                         from.AddNumber("展示顺序", "Seq", item.Seq);
                         from.Submit("确认", request, "Design");
@@ -628,7 +637,7 @@ namespace UMC.Activities
                                 this.Prompt("请先删除子项");
                             }
 
-                            entity.Where.Reset().And().Equal(new Design_Item() { design_id = sId });
+                            entity.Where.Reset().And().Equal(new Design_Item() { Id = sId });
                             entity.Delete();
                             this.Context.Send("Design", true);
 
@@ -642,7 +651,7 @@ namespace UMC.Activities
                             }
 
 
-                            entity.Where.Reset().And().Equal(new Design_Item() { design_id = sId });
+                            entity.Where.Reset().And().Equal(new Design_Item() { Id = item.Id });
                             entity.Delete();
                             this.Context.Send("Design", true);
                         }

@@ -41,20 +41,57 @@ namespace UMC.Activities
                   if (form.ContainsKey("limit") == false)
                   {
                       this.Context.Send(new UISectionBuilder(request.Model, request.Command, request.Arguments)
-                              .RefreshEvent("Setting", "image", "Email", "Mobile")
+                              .RefreshEvent("UI.Setting", "image", "Email", "Mobile")
                               .Builder(), true);
 
                   }
                   var account = Security.Account.Create(user.Id.Value);
-                  var dic = UMC.Web.UISection.Create(new UITitle("账户信息"));
-                  dic.AddImageTextValue(Data.WebResource.Instance().ImageResolve(user.Id.Value, "1", 4), "头像", 100, new UIClick("id", user.Id.ToString(), "seq", "1")
-                  { Model = "Design", Command = "Image" });
-
-                  dic.AddCell("昵称", user.Alias, new UIClick(new WebMeta(request.Arguments).Put(gkey, "Alias")).Send(request.Model, request.Command));
-
-
+                  var dic = UMC.Web.UISection.Create();
                   var name = user.Name;
-                  dic.AddCell('\uf084', "登录账号", name, new UIClick() { Model = "Account", Command = "Password" });
+                  switch (Type)
+                  {
+                      default:
+                          dic.Title = new UITitle("账户信息");
+                          var imageTextView = new UMC.Web.UI.UIImageTextValue(Data.WebResource.Instance().ImageResolve(user.Id.Value, "1", 4), "头像", "");
+                          imageTextView.Style.Name("image-width", "100");
+                          imageTextView.Click(new UIClick("id", user.Id.ToString(), "seq", "1")
+                          { Model = "Design", Command = "Picture" });
+                          //dic.AddImageTextValue(Data.WebResource.Instance().ImageResolve(user.Id.Value, "1", 4), "头像", 100, new UIClick("id", user.Id.ToString(), "seq", "1")
+                          //{ Model = "Design", Command = "Picture" });
+                          dic.Add(imageTextView);
+
+                          dic.AddCell("昵称", user.Alias, new UIClick(new WebMeta(request.Arguments).Put(gkey, "Alias")).Send(request.Model, request.Command));
+
+
+                          dic.AddCell('\uf084', "登录账号", name, new UIClick() { Model = "Account", Command = "Password" });
+                          break;
+                      case "Small":
+
+                          var Discount = new UIHeader.Portrait(Data.WebResource.Instance().ImageResolve(user.Id.Value, "1", 4));
+
+
+                          Discount.Value(user.Alias);
+
+                          var ac2 = account[Security.Account.SIGNATURE_ACCOUNT_KEY];
+                          Discount.Time(ac2 == null ? "未有签名" : ac2.Name);
+
+                          var color = 0xfff;
+                          Discount.Gradient(color, color);
+                          Discount.Click(new UIClick("id", user.Id.ToString(), "seq", "1")
+                          { Model = "Design", Command = "Picture" });
+                          var header = new UIHeader();
+
+                          var style = new UIStyle();
+                          header.AddPortrait(Discount);
+                          header.Put("style", style);
+
+                          style.Name("value").Color(0x111).Size(18).Click(new UIClick(new WebMeta(request.Arguments).Put(gkey, "Alias")).Send(request.Model, request.Command));
+                          style.Name("time").Click(new UIClick(new WebMeta(request.Arguments).Put(gkey, "Signature")).Send(request.Model, request.Command));
+
+                          dic.UIHeader = header;
+
+                          break;
+                  }
 
 
 
@@ -81,7 +118,9 @@ namespace UMC.Activities
                       name = "点击绑定";
                   }
 
-                  var cui = dic.NewSection().AddCell('\uf199', "邮箱", name, new UIClick() { Command = "Email", Model = "Account" });
+                  var cui = Type == "Small" ? dic : dic.NewSection();
+
+                  cui.AddCell('\uf199', "邮箱", name, new UIClick() { Command = "Email", Model = "Account" });
 
                   ac = account[Security.Account.MOBILE_ACCOUNT_KEY];
                   if (ac != null && String.IsNullOrEmpty(ac.Name) == false)
@@ -103,10 +142,25 @@ namespace UMC.Activities
 
                   cui.AddCell('\ue91a', "手机号码", name, new UIClick() { Command = "Mobile", Model = "Account" });
 
-                  UICell cell = UICell.Create("UI", new UMC.Web.WebMeta().Put("text", "退出登录").Put("Icon", "\uf011").Put("click", new UIClick() { Model = "Account", Command = "Close" }));
-                  cell.Style.Name("text", new UIStyle().Color(0xf00));
-                  dic.NewSection().NewSection().Add(cell);
+                  switch (Type)
+                  {
+                      case "Small":
+                          response.Redirect(dic);
+                          break;
+                      default:
+                          ac = account[Security.Account.SIGNATURE_ACCOUNT_KEY];
+                          dic.NewSection().AddCell("个性签名", ac == null ? "未有签名" : ac.Name, new UIClick(new WebMeta(request.Arguments).Put(gkey, "Signature")).Send(request.Model, request.Command));
 
+                          break;
+                  }
+
+
+                  if (request.IsApp == false && request.IsWeiXin == false)
+                  {
+                      UICell cell = UICell.Create("UI", new UMC.Web.WebMeta().Put("text", "退出登录").Put("Icon", "\uf011").Put("click", new UIClick() { Model = "Account", Command = "Close" }));
+                      cell.Style.Name("text", new UIStyle().Color(0xf00));
+                      dic.NewSection().NewSection().Add(cell);
+                  }
 
 
                   response.Redirect(dic);
@@ -118,7 +172,35 @@ namespace UMC.Activities
                     String Alias = this.AsyncDialog("Alias", a => new UITextDialog() { Title = "修改别名", DefaultValue = user.Alias });
                     Membership.Instance().ChangeAlias(user.Name, Alias);
                     this.Prompt(String.Format("您的账户的别名已修改成{0}", Alias), false);
-                    this.Context.Send("Setting", true);
+                    this.Context.Send("UI.Setting", true);
+
+
+                    break;
+                case "Signature":
+
+                    var account = Security.Account.Create(user.Id.Value);
+
+
+                    var ac = account[Security.Account.SIGNATURE_ACCOUNT_KEY];
+                    var reset = Web.UIFormDialog.AsyncDialog("value", g =>
+                    {
+
+
+                        var selt = new Web.UIFormDialog();
+                        selt.Title = "个性签名";
+                        selt.AddTextarea("个性签名", "Signature", ac == null ? "" : ac.Name);
+                        selt.Submit("确认提交", request, "UI.Setting");
+                        return selt;
+                    });
+                    var Signature = reset["Signature"];
+                    Security.Account.Post(Signature, user.Id.Value, Security.UserFlags.Normal, Security.Account.SIGNATURE_ACCOUNT_KEY);
+
+
+
+                    WebMeta print = new UMC.Web.WebMeta();
+                    print["type"] = "UI.Setting";
+                    print["Signature"] = Signature;
+                    this.Context.Send(print, true);
 
 
                     break;

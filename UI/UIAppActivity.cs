@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Threading; 
+using System.Threading;
 using System.IO;
 using UMC.Web.UI;
 using UMC.Web;
@@ -16,11 +16,26 @@ namespace UMC.Activities
         {
 
             var config = this.AsyncDialog("Key", g => this.DialogValue("none"));
-            var file = Utility.MapPath(String.Format("~/App_Data/app.json", Utility.GetRoot(request.Url)));
+
+            switch (config)
+            {
+                case "Version":
+                case "Builder":
+                case "json":
+                case "Android":
+                case "IOS":
+                    break;
+                default:
+                    if (request.IsMaster == false)
+                    {
+                        this.Prompt("只有管理员才能设置App");
+                    }
+                    break;
+            }
+            var file = Reflection.ConfigPath("App.json");
             if (System.IO.File.Exists(file) == false)
             {
-                using (System.IO.Stream stream = typeof(UIAppActivity).Assembly
-                                .GetManifestResourceStream("UMC.Activities.Resources.app.json"))
+                using (System.IO.Stream stream = new System.Net.Http.HttpClient().GetStreamAsync("http://oss.365lu.cn/UserResources/demo.json").Result)
                 {
                     UMC.Data.Utility.Copy(stream, file);
 
@@ -31,6 +46,53 @@ namespace UMC.Activities
 
             switch (config)
             {
+                case "Version":
+                    {
+
+                        int vindex = request.UserAgent.IndexOf("android");
+                        if (vindex > 0)
+                        {
+                            var v = request.UserAgent.Substring(request.UserAgent.IndexOf("V", vindex) + 1);
+                            var cfgs = UMC.Configuration.ProviderConfiguration.GetProvider(Reflection.ConfigPath("Version.xml"));
+                            if (cfgs == null)
+                            {
+                                this.Prompt("提示", "当前已经是最新版本");
+                            }
+
+                            var provider = cfgs[config];
+                            if (provider != null)
+                            {
+                                if (Data.Utility.IntParse(provider["versionCode"], 0) > UMC.Data.Utility.IntParse(v, 0))
+                                {
+                                    this.AsyncDialog("Confirm", g =>
+                                    {
+                                        return new UMC.Web.UIConfirmDialog("您有新版本，点击确认安装") { Title = "新版本安装" };
+                                    });
+                                    var meta = new UMC.Web.WebMeta();
+                                    meta.Put("name", provider.Name);
+                                    meta.Put("text", provider["text"]);
+                                    meta.Put("title", provider["title"]);
+                                    meta.Put("src", provider["src"]).Put("type", "Download");
+                                    this.Context.Send(meta, true);
+
+                                }
+                                else
+                                {
+                                    this.Prompt("提示", "当前已经是最新版本");
+                                }
+                            }
+                            else
+                            {
+                                this.Prompt("提示", "当前已经是最新版本");
+
+                            }
+                        }
+                        else
+                        {
+                            this.Prompt("苹果版本自动更新");
+                        }
+                    }
+                    break;
                 case "Builder":
                     if (String.IsNullOrEmpty(appConfig["AppName"] as string))
                     {
@@ -40,7 +102,7 @@ namespace UMC.Activities
                     {
                         this.Prompt("请上传图标");
                     }
-                    if (String.IsNullOrEmpty(appConfig["IconSrc"] as string))
+                    if (String.IsNullOrEmpty(appConfig["BgSrc"] as string))
                     {
                         this.Prompt("请上传启动图");
                     }
@@ -48,30 +110,31 @@ namespace UMC.Activities
                     dataKey["root"] = Utility.GetRoot(request.Url);
                     dataKey["host"] = new Uri(request.Url, "/").AbsoluteUri.Trim('/');
                     appConfig["DataKey"] = dataKey;
-                    response.Redirect(Data.JSON.Serialize(appConfig));
+                    response.Redirect(appConfig);
                     break;
                 case "json":
+                    appConfig["IsMaster"] = request.IsMaster;
                     response.Redirect(appConfig);
                     break;
                 case "Reset":
-                    var ResetName = this.AsyncDialog("Reset", g =>
                     {
-                        var k = new UISelectDialog()
+                        var ResetName = this.AsyncDialog("Reset", g =>
                         {
-                            Title = "选择参考的默认的界面架构"
-                        };
-                        k.Options.Add("DOME架构", "app");
-                        //k.Options.Add("电商架构", "mall");
-                        //k.Options.Add("收银台架构", "seller");
-                        return k;
-                    });
-                    using (System.IO.Stream stream = typeof(UIAppActivity).Assembly
-                             .GetManifestResourceStream(String.Format("UMC.Activities.Resources.{0}.json", ResetName)))
-                    {
-                        var appConfig2 = Data.JSON.Deserialize(new System.IO.StreamReader(stream).ReadToEnd()) as Hashtable;
+                            var k = new UISelectDialog()
+                            {
+                                Title = "选择参考的默认的界面架构"
+                            };
+                            k.Options.Add("DOME架构", "demo");
+                            return k;
+                        });
+                        String stream = new System.Net.Http.HttpClient().GetStringAsync(String.Format("http://oss.365lu.cn/UserResources/{0}.json", ResetName)).Result;
+
+                        var appConfig2 = Data.JSON.Deserialize(stream) as Hashtable;
                         appConfig2["BgSrc"] = appConfig["BgSrc"];
                         appConfig2["IconSrc"] = appConfig["IconSrc"];
                         appConfig2["AppName"] = appConfig["AppName"];
+                        appConfig2["Android"] = appConfig["Android"];
+                        appConfig2["IOS"] = appConfig["IOS"];
                         appConfig = appConfig2;
                     }
                     break;
@@ -100,6 +163,14 @@ namespace UMC.Activities
                         appConfig["footBar"] = footbar;
                     }
                     break;
+                case "Android":
+                case "IOS":
+                    appConfig[config] = this.AsyncDialog("Value", g =>
+                    {
+                        var k = new UITextDialog() { Title = config + "下载地址", DefaultValue = appConfig[config] as string };
+                        return k;
+                    });
+                    break;
                 case "BgSrc":
                 case "IconSrc":
                     {
@@ -109,7 +180,10 @@ namespace UMC.Activities
                             var k = new UITextDialog() { Title = "值" };
                             return k;
                         });
-                        appConfig[config] = AppName;
+                        var Key = String.Format("UserResources/{0}/{1}/{2}", Utility.GetRoot(request.Url), config, AppName.Substring(AppName.LastIndexOf('/') + 1));
+                        var webR = UMC.Data.WebResource.Instance();
+                        webR.Transfer(new Uri(AppName), Key);
+                        appConfig[config] = new Uri(request.Url, webR.WebDomain() + Key).AbsoluteUri;
                     }
                     break;
                 case "AppName":
@@ -150,7 +224,7 @@ namespace UMC.Activities
                             switch (config)
                             {
                                 case "Setting":
-                                    switch (hash["key"] as string)
+                                    switch (hash["key"] as string ?? "Click")
                                     {
                                         case "Home":
                                         case "Category":

@@ -100,7 +100,7 @@ namespace UMC.Activities
                     request.Arguments["Id"] = link.Id.ToString();
                 }
                 fdlg.AddFile("图片", "_Header", Data.WebResource.Instance().ImageResolve(link.Id.Value, "1", 5))
-                  .Command("Design", "Image", new UMC.Web.WebMeta().Put("id", link.Id).Put("seq", "1"));
+                  .Command("Design", "Picture", new UMC.Web.WebMeta().Put("id", link.Id).Put("seq", "1"));
                 fdlg.AddText("网址", "Url", link.Url).Put("tip", "");
                 fdlg.AddText("网址标题", "Caption", link.Caption);
                 fdlg.AddText("所属组", "GroupBy", link.GroupBy);

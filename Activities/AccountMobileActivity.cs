@@ -69,7 +69,7 @@ namespace UMC.Activities
                      var fm = new Web.UIFormDialog() { Title = "解除验证" };
                      fm.AddTextValue().Put("手机号码", a.Name);
                      fm.AddVerify("验证码", "Code", "您收到的验证码")
-                .Command("Account", "Mobile", new UMC.Web.WebMeta().Put("Mobile", a.Name).Put("Code", "Send"))
+                    .Command("Account", "Mobile", new UMC.Web.WebMeta().Put("Mobile", a.Name).Put("Code", "Send"))
                     .Put("Start", "YES");
 
                      fm.Submit("确认验证码", this.Context.Request, "Mobile");
@@ -80,7 +80,6 @@ namespace UMC.Activities
             {
                 if (String.Equals(session.Value["Code"] as string, code))
                 {
-
                     Account.Post(a.Name, a.user_id, Security.UserFlags.UnVerification, Account.MOBILE_ACCOUNT_KEY);
                     this.Prompt("手机解除绑定成功", false);
                     this.Context.Send(new UMC.Web.WebMeta().Put("type", "Mobile"), true);

@@ -50,7 +50,6 @@ namespace UMC.Activities
             Net.Message.Instance().Send("Login", hask, mobile);
 
 
-            //WebResource.Instance().Send(Utility.Format("您的手机验证码为{code}，如果不是您发送的，请不用理会。", hask), mobile);
         }
 
         public override void ProcessActivity(WebRequest request, WebResponse response)
@@ -67,32 +66,68 @@ namespace UMC.Activities
             }
             var user = Web.UIFormDialog.AsyncDialog("Login", d =>
             {
+                if (request.SendValues != null && request.SendValues.Count > 0)
+                {
+                    return this.DialogValue(request.SendValues);
+                }
+                if (request.Url.Query.Contains("_v=Sub"))
+                {
+                    this.Context.Send("Login", true);
+                }
 
-                var u = new UMC.Data.Entities.User { Username = String.Empty };
+                //   var u = new UMC.Data.Entities.User { Username = String.Empty };
 
 
                 var dialog = new Web.UIFormDialog();
-                dialog.Title = "账户登录";
-                if (request.IsApp)
+                dialog.Title = "登录";
+                switch (type)
                 {
-                    dialog.AddText("手机号码", "Username", u.Username).Put("placeholder", "手机");
+                    default:
+                    case "User":
+                        this.Context.Send("LoginChange", false);
+                        {
+                            dialog.AddText("用户名", "Username", String.Empty).Put("placeholder", "用户名/手机/邮箱");
 
-                    dialog.AddVerify("验证码", "VerifyCode", "您收到的验证码").Put("For", "Username").Put("To", "Mobile")
-                    .Put("Command", request.Command).Put("Model", request.Model);
-                    dialog.Submit("登录", request, "User");
-                    dialog.AddUIIcon("\uf234", "注册新用户").Put("Model", request.Model).Put("Command", "Register");
+                            dialog.AddPassword("用户密码", "Password", String.Empty);
 
+                            dialog.Submit("登录", request, "User", "LoginChange");
+                            var uidesc = new UMC.Web.UI.UIDesc(new WebMeta().Put("eula", "用户协议").Put("private", "隐私政策"));
+                            uidesc.Desc("登录即同意“{eula}”和“{private}”");
+                            uidesc.Style.AlignCenter();
+                            uidesc.Style.Color(0x888).Size(14).Height(34);
+                            uidesc.Style.Name("eula").Color(0x3194d0).Click(new UIClick("365lu/provision/eula").Send("Subject", "UIData"));
+                            uidesc.Style.Name("private").Color(0x3194d0).Click(new UIClick("365lu/provision/private").Send("Subject", "UIData"));
+                            dialog.Add(uidesc);
+                            dialog.AddUIIcon("\uf2c1", "免密登录").Command(request.Model, request.Command, "Mobile");
+                            dialog.AddUIIcon("\uf1c6", "忘记密码").Put("Model", request.Model).Put("Command", "Forget");
+                            dialog.AddUIIcon("\uf234", "注册新用户").Put("Model", request.Model).Put("Command", "Register");
+
+                        }
+                        break;
+                    case "Mobile":
+                        this.Context.Send("LoginChange", false);
+                        {
+                            dialog.AddText("手机号码", "Username", String.Empty).Put("placeholder", "注册的手机号码");
+
+                            dialog.AddVerify("验证码", "VerifyCode", "您收到的验证码").Put("For", "Username").Put("To", "Mobile")
+                            .Put("Command", request.Command).Put("Model", request.Model);
+                            dialog.Submit("登录", request, "User", "LoginChange");
+
+                            var uidesc = new UMC.Web.UI.UIDesc(new WebMeta().Put("eula", "用户协议").Put("private", "隐私政策"));
+                            uidesc.Desc("登录即同意“{eula}”和“{private}”");
+                            uidesc.Style.AlignCenter();
+                            uidesc.Style.Color(0x888).Size(14).Height(34);
+                            uidesc.Style.Name("eula").Color(0x3194d0).Click(new UIClick("365lu/provision/eula").Send("Subject", "UIData"));
+                            uidesc.Style.Name("private").Color(0x3194d0).Click(new UIClick("365lu/provision/private").Send("Subject", "UIData"));
+                            dialog.Add(uidesc);
+                            dialog.AddUIIcon("\uf13e", "密码登录").Command(request.Model, request.Command, "User");
+                            dialog.AddUIIcon("\uf234", "注册新用户").Command(request.Model, "Register");//.Put("Model", request.Model).Put("Command", "Register");
+                        }
+                        break;
                 }
-                else
-                {
-                    dialog.AddText("用户名", "Username", u.Username).Put("placeholder", "手机/邮箱");
 
-                    dialog.AddPassword("用户密码", "Password", String.Empty);
-                    dialog.Submit("登录", request, "User");
-                    dialog.AddUIIcon("\uf1c6", "忘记密码").Put("Model", request.Model).Put("Command", "Forget");
-                    dialog.AddUIIcon("\uf234", "注册新用户").Put("Model", request.Model).Put("Command", "Register");
-                }
                 return dialog;
+
 
             });
 
@@ -153,11 +188,11 @@ namespace UMC.Activities
                 else
                 {
                     var iden = userManager.Identity(eData.user_id.Value);
-                    System.Security.Principal.IPrincipal p = iden;
-                    if (p.IsInRole(UMC.Security.Membership.UserRole))
-                    {
-                        this.Prompt("您是内部账户，不可从此入口登录");
-                    }
+                    //System.Security.Principal.IPrincipal p = iden;
+                    //if (p.IsInRole(UMC.Security.Membership.UserRole))
+                    //{
+                    //    this.Prompt("您是内部账户，不可从此入口登录");
+                    //}
 
 
                     UMC.Security.AccessToken.Login(iden, UMC.Security.AccessToken.Token.Value, request.IsApp ? "App" : "Client", true);
@@ -191,11 +226,11 @@ namespace UMC.Activities
                 {
                     case 0:
                         var iden = userManager.Identity(username);
-                        System.Security.Principal.IPrincipal p = iden;
-                        if (p.IsInRole(UMC.Security.Membership.UserRole))
-                        {
-                            this.Prompt("您是内部账户，不可从此入口登录");
-                        }
+                        //System.Security.Principal.IPrincipal p = iden;
+                        //if (p.IsInRole(UMC.Security.Membership.UserRole))
+                        //{
+                        //    this.Prompt("您是内部账户，不可从此入口登录");
+                        //}
 
 
                         UMC.Security.AccessToken.Login(iden, UMC.Security.AccessToken.Token.Value, request.IsApp ? "App" : "Client", true);

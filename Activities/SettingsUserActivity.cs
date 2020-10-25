@@ -253,12 +253,12 @@ namespace UMC.Activities
                 if (users.ContainsKey("Password"))
                 {
                     UMC.Security.Membership.Instance().Password(user.Username, users["Password"]);
-                    this.Prompt(String.Format("{0}的密码已重置", user.Alias));
+                    this.Prompt(String.Format("{0}的密码已重置", user.Alias), false);
                 }
                 else
                 {
                     UMC.Security.Membership.Instance().ChangeAlias(user.Username, users["Alias"]);
-                    this.Prompt(String.Format("{0}的别名已重置成{1}", user.Username, users["Alias"]));
+                    this.Prompt(String.Format("{0}的别名已重置成{1}", user.Username, users["Alias"]), false);
                 }
 
                 this.Context.Send(new UMC.Web.WebMeta().Put("type", "Setting"), true);

@@ -12,7 +12,7 @@ namespace UMC.Activities
     /// <summary>
     /// 
     /// </summary>
-    [Mapping("Settings", "SelectRole", Auth = WebAuthType.Admin, Desc = "查找用户", Category = 1)]
+    [Mapping("Settings", "SelectRole", Auth = WebAuthType.User, Desc = "查找角色", Category = 1)]
     public class SettingsSelectRoleActivity : WebActivity
     {
         ListItem User()

@@ -23,6 +23,7 @@ public class AccountCheckActivity : WebActivity
             }
             info["IsCashier"] = request.IsCashier;
             info["TimeSpan"] = UMC.Data.Utility.TimeSpan();
+            info["Device"] = UMC.Data.Utility.Guid(UMC.Security.AccessToken.Token.Value);
 
             var ContentType = pri.SpecificData.ContentType;
             if (String.IsNullOrEmpty(ContentType) == false)
@@ -45,7 +46,16 @@ public class AccountCheckActivity : WebActivity
             }
             response.Redirect(info);
 
+        }
+        else if (request.SendValue == "Login")
+        {
+            if (user.IsAuthenticated == false)
+            {
+                this.Context.Send("Login", true);
 
+
+            }
+            return;
         }
         else if (request.SendValue == "User")
         {

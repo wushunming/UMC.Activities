@@ -12,11 +12,18 @@ namespace UMC.Activities
         {
             switch (this.Context.Request.Command)
             {
-
+                case "Demo":
+                    return new UIDemoActivity();
                 case "App":
                     return new UIAppActivity();
                 case "Home":
                     return new DesignUIActivity(false);
+                case "Search":
+                    return new UISearchActivity();
+                case "Config":
+                    return new UIConfigActivity();
+                case "Setting":
+                    return new UISettingsActivity();
                 default:
                     return WebActivity.Empty;
 

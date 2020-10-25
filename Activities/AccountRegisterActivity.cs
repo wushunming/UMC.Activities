@@ -50,8 +50,6 @@ namespace UMC.Activities
 
             Net.Message.Instance().Send("Register", hask, mobile);
 
-
-            //WebResource.Instance().Send(Utility.Format("您的手机验证码为{code}，如果不是您发送的，请不用理会。", hask), mobile);
         }
 
         public override void ProcessActivity(WebRequest request, WebResponse response)
@@ -79,7 +77,7 @@ namespace UMC.Activities
                     dialog.AddPassword("密码", "Password", false);
                     dialog.AddPassword("确认密码", "NewPassword2", false).Put("placeholder", "再输入一次密码").Put("ForName", "Password");
                 }
-                dialog.Submit("确认注册", request, "register");
+                dialog.Submit("确认注册", request, "User");
                 return dialog;
 
             });
@@ -179,7 +177,6 @@ namespace UMC.Activities
 
                 UMC.Security.AccessToken.Login(iden, UMC.Security.AccessToken.Token.Value, request.IsApp ? "App" : "Client", true);
 
-                this.Context.Send(new UMC.Web.WebMeta().Put("type", "register"), false);
                 this.Context.Send(new UMC.Web.WebMeta().Put("type", "User"), false);
                 this.Prompt("注册成功");
             }

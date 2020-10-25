@@ -46,7 +46,7 @@ namespace UMC.Activities
                                 user_id = user.Id,
                                 Poster = user.Alias,
                                 CreationDate = DateTime.Now,
-                                Type = UMC.Data.Entities.ProposalType.Effective
+                                Type = 1
                             });
                             lineEntity.IFF(e1 => e1.Update("{0}+{1}", new UMC.Data.Entities.Link { Favs = 1 }) == 0, e1 =>
                             e1.Insert(new UMC.Data.Entities.Link

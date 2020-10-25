@@ -18,7 +18,7 @@ namespace UMC.Activities
                 UIRadioDialog di = new UIRadioDialog();
                 di.Title = ("关联功能");
                 ListItemCollection listItemCollection = di.Options;//new ListItemCollection();
-            listItemCollection.Add("连接扫一扫", "Scanning");
+                listItemCollection.Add("连接扫一扫", "Scanning");
                 listItemCollection.Add("连接指令", "Setting");
                 listItemCollection.Add("连接拨号", "Tel");
                 listItemCollection.Add("连接网址", "Url");
@@ -53,8 +53,8 @@ namespace UMC.Activities
                     {
                         UIFormDialog di = new UIFormDialog();
                         di.Title = ("功能指令");
-                        di.AddText("模块指令", "Model", (String)c["model"]);
-                        di.AddText("模块指令", "Command", (String)c["cmd"]);
+                        di.AddText("模块代码", "Model", (String)c["model"]);
+                        di.AddText("指令代码", "Command", (String)c["cmd"]);
                         di.AddPrompt("此块内容为专业内容，请由工程师设置");
 
                         if (c.ContainsKey("send"))
@@ -73,7 +73,7 @@ namespace UMC.Activities
                         else
                         {
 
-                            di.AddText("参数", "Send", "none").PlaceHolder("如果没参数，则用none");
+                            di.AddText("参数", "Send").PlaceHolder("如果没参数，则用none").NotRequired();
                         }
 
                         return di;
@@ -86,13 +86,16 @@ namespace UMC.Activities
 
                     if ("none".Equals(Send, StringComparison.CurrentCultureIgnoreCase) == false)
                     {
-                        if (Send.StartsWith("{"))
+                        if (String.IsNullOrEmpty(Send) == false)
                         {
-                            click.Send(UMC.Data.JSON.Deserialize<WebMeta>(Send));
-                        }
-                        else
-                        {
-                            click.Send(Send);
+                            if (Send.StartsWith("{"))
+                            {
+                                click.Send(UMC.Data.JSON.Deserialize<WebMeta>(Send));
+                            }
+                            else
+                            {
+                                click.Send(Send);
+                            }
                         }
                     }
                     return click;

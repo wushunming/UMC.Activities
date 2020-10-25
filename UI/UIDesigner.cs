@@ -35,40 +35,39 @@ namespace UMC.Activities
                 StoreDesignTypeDiscount = 2048,
                 StoreDesignType = 2048 * 2;
 
-        UISlider[] Sliders(Guid parentId, List<Design_Item> baners)
+
+        void Sliders(UISlider slider, Guid parentId, String type, List<Design_Item> baners)
         {
-            List<UISlider> list = new List<UISlider>();
-            UMC.Data.WebResource webr = UMC.Data.WebResource.Instance();
-            foreach (Design_Item b in baners)
+            var webr = UMC.Data.WebResource.Instance();
+            foreach (var b in baners)
             {
-                UISlider slider = new UISlider();
 
-                slider.Src = webr.ImageResolve(b.Id.Value, "1", 0) + "!slider?" + TimeSpan(b.ModifiedDate);
-
+                var src = webr.ResolveUrl(String.Format("{1}{0}/1/0.jpg!{3}?{2}", b.Id, UMC.Data.WebResource.ImageResource, TimeSpan(b.ModifiedDate), type));
                 if (_editer)
                 {
-                    slider.Click = (new UIClick(new UMC.Web.WebMeta().Put("Id", b.Id)).Send("Design", "Item"));
+                    slider.Add(new UIClick(new UMC.Web.WebMeta().Put("Id", b.Id)) { Command = "Item", Model = "Design" }, src);
                 }
                 else
                 {
                     if (String.IsNullOrEmpty(b.Click) == false)
                     {
-                        slider.Click = UMC.Data.JSON.Deserialize<UIClick>(b.Click);
-
+                        slider.Add(UMC.Data.JSON.Deserialize<UIClick>(b.Click), src);
+                    }
+                    else
+                    {
+                        slider.Add(src);
                     }
 
                 }
-                list.Add(slider);
             }
-            if (list.Count == 0 && _editer)
+            if (slider.Count == 0 && _editer)
             {
-                list.Add(new UISlider() { Click = new UIClick(parentId.ToString()).Send("Design", "Item") });
+                slider.Add(new UIClick(parentId.ToString()).Send("Design", "Item"));
 
             }
-            return list.ToArray();
 
         }
-
+        //
         void Sliders(Design_Item parent, List<Design_Item> baners, UISection U)
         {
             if (baners.Count > 0)
@@ -76,7 +75,27 @@ namespace UMC.Activities
                 WebMeta config = UMC.Data.JSON.Deserialize<WebMeta>(parent.Data) ?? new UMC.Web.WebMeta();
 
 
-                UICell slider2 = UISlider.Create(Sliders(parent.Id.Value, baners));
+                var type = config["type"];
+                var sType = "slider";
+                var slider2 = new UISlider(config.ContainsKey("auto"));
+                switch (type)
+                {
+                    case "Small":
+                        slider2.Small();
+                        sType = "4-1";
+                        break;
+                    case "Square":
+                        slider2.Square();
+                        sType = "350";
+                        break;
+                    default:
+                        type = "slider";
+                        break;
+                }
+
+                Sliders(slider2, parent.Id.Value, sType, baners);
+
+
                 int[] paddings = UIStyle.Padding(config);
                 if (paddings.Length > 0)
                 {
@@ -94,6 +113,99 @@ namespace UMC.Activities
                 desc.Style.AlignCenter().Name("desc", new UIStyle().Font("wdk").Size(38));
                 U.Add(desc);
 
+            }
+        }
+        public static List<WebMeta> GetBanner(bool editer, params Guid[] ids)
+        {
+            var itemsEntity = UMC.Data.Database.Instance().ObjectEntity<Design_Item>();
+            var maxItems = new List<Design_Item>();
+
+
+            itemsEntity.Where.And().In(new Design_Item { design_id = ids[0] }, ids);
+            itemsEntity.Order.Asc(new Design_Item { Seq = 0 }).Entities.Query(dr => maxItems.Add(dr));
+
+            var webr = UMC.Data.WebResource.Instance();
+
+            var lis = new List<WebMeta>();
+            var banners = maxItems.FindAll(g => g.Type == UIDesigner.StoreDesignTypeBanners);
+
+            maxItems.RemoveAll(g =>
+            {
+                switch (g.Type.Value)
+                {
+                    case UIDesigner.StoreDesignTypeCustom:
+                    case UIDesigner.StoreDesignTypeItem:
+                        return false;
+                }
+                return true;
+            });
+            List<Design_Item> items = new List<Design_Item>();
+            foreach (var did in ids)
+            {
+                items = maxItems.FindAll(g => g.design_id == did);
+                if (items.Count > 0)
+                {
+                    break;
+                }
+
+            }
+            var designItem = banners.Find(g => g.design_id == ids[0]);
+            if (editer)
+            {
+                if (designItem == null)
+                {
+                    designItem = new Design_Item
+                    {
+                        Id = Guid.NewGuid(),
+                        Type = UIDesigner.StoreDesignTypeBanners,
+                        for_id = Guid.Empty,
+                        design_id = ids[0]
+                    };
+
+                    banners.Add(designItem);
+                    itemsEntity.Insert(designItem);
+                }
+            }
+            foreach (var b in items)
+            {
+                var pms = JSON.Deserialize<WebMeta>(b.Data) ?? new UMC.Web.WebMeta();
+                pms.Put("id", b.Id);
+                pms.Put("click", Click(b, designItem, editer));
+                if (editer)
+                {
+                    pms.Put("design", true);
+                }
+                pms.Put("src", webr.ResolveUrl(String.Format("{1}{0}/1/0.jpg?{2}", b.Id, UMC.Data.WebResource.ImageResource, Utility.TimeSpan(b.ModifiedDate ?? DateTime.Now))));
+                lis.Add(pms);
+            }
+            if (items.Count == 0)
+            {
+                if (editer)
+                {
+                    lis.Add(new UMC.Web.WebMeta().Put("design", true).Put("click", new UIClick(new UMC.Web.WebMeta().Put("Id", designItem.Id)) { Command = "Item", Model = "Design" }));
+
+                }
+            }
+            return lis;//
+        }
+
+        static UIClick Click(Design_Item item, Design_Item design, bool editer)
+        {
+            if (editer)
+            {
+                if (design.design_id == item.design_id)
+                {
+                    return new UIClick(new UMC.Web.WebMeta().Put("Id", item.Id.ToString())) { Command = "Item", Model = "Design" };
+                }
+                else
+                {
+                    return new UIClick(new UMC.Web.WebMeta().Put("Id", design.Id.ToString())) { Command = "Item", Model = "Design" };
+
+                }
+            }
+            else
+            {
+                return JSON.Deserialize<UIClick>(item.Click);
             }
         }
 
@@ -123,7 +235,11 @@ namespace UMC.Activities
             }
             if (list.Count > 0)
             {
-                U.AddIcon(new UIStyle().Name("icon", new UIStyle().Font("wdk").Size(24)), list.ToArray());
+                var ic = new UMC.Web.UI.UIIcon();
+                ic.Style.Name("icon", new UIStyle().Font("wdk").Size(24));
+
+                ic.Add(list.ToArray());
+                //U.AddIcon(new UIStyle().Name("icon", new UIStyle().Font("wdk").Size(24)), list.ToArray());
             }
             else if (_editer)
             {
@@ -142,14 +258,15 @@ namespace UMC.Activities
         void Items(Design_Item parent, List<Design_Item> baners, UISection U)
         {
             Guid parentId = parent.Id.Value;
-            List<UIItem> list = new List<UIItem>();
+            //List<UIItem> list = new List<UIItem>();
+            var item = new UIItems();
             UMC.Data.WebResource webr = UMC.Data.WebResource.Instance();
             for (int i = 0; i < baners.Count && i < 4; i++)
             {
                 Design_Item b = baners[i];
                 WebMeta icon = UMC.Data.JSON.Deserialize<WebMeta>(b.Data) ?? new UMC.Web.WebMeta();
-                UIItem slider = UIItem.Create(icon);
-                slider.Click(this.Click(b));
+                item.Add(icon);
+                icon.Put("click", this.Click(b));
                 String t = "100";
                 switch (baners.Count)
                 {
@@ -167,13 +284,14 @@ namespace UMC.Activities
                         break;
                 }
 
-                slider.Src(String.Format("{0}!{1}?{2}", webr.ImageResolve(b.Id.Value, "1", 0), t, TimeSpan(b.ModifiedDate)));
-                list.Add(slider);
+                icon.Put("src", String.Format("{0}!{1}?{2}", webr.ImageResolve(b.Id.Value, "1", 0), t, TimeSpan(b.ModifiedDate)));
+                //list.Add(slider);
 
             }
-            if (list.Count > 0)
+            if (item.Count > 0)
             {
-                U.AddItems(list.ToArray());// (new UIItem[0]));
+                U.Add(item);
+
             }
             else if (_editer)
             {
@@ -320,7 +438,7 @@ namespace UMC.Activities
             //        list.add(slider);
 
             //
-            UIImageTitleDescBottom btm = UIImageTitleDescBottom.Create(data, src);
+            UIImageTitleDescBottom btm = new UIImageTitleDescBottom(data, src);
             btm.Click(this.Click(item));
             var left = data["left"];
             if (String.IsNullOrEmpty(left) == false)
@@ -429,7 +547,7 @@ namespace UMC.Activities
                         {
                             if (_editer)
                             {
-                                UITitleMore more = UITitleMore.Create(bp.ItemName).More("已隐藏{3:more}");
+                                UITitleMore more = new UITitleMore(bp.ItemName).More("已隐藏{3:more}");
                                 more.Style.Name("more", new UIStyle().Color(0xc00));
 
                                 use.Add(more.Click(this.Click(bp)));
@@ -437,7 +555,7 @@ namespace UMC.Activities
                         }
                         else
                         {
-                            UITitleMore more = UITitleMore.Create(bp.ItemName).Click(this.Click(bp));
+                            UITitleMore more = new UITitleMore(bp.ItemName).Click(this.Click(bp));
 
                             more.Style.Padding(UIStyle.Padding(config));
                             use.Add(more);

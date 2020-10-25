@@ -45,6 +45,7 @@ namespace UMC.Activities
             else
             {
                 ids.Add(Utility.Guid(strs, true).Value);
+                
             }
 
             List<Guid> pids = new List<Guid>(); ;// new LinkedList<>();

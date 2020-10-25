@@ -85,7 +85,7 @@ namespace UMC.Activities
 
                     fm.AddFile(size, "_Image", webr.ResolveUrl(String.Format("{0}{1}/1/0.jpg!100", UMC.Data.WebResource.ImageResource, itemId)))
                   //.Put("Model", "Settings").Put("Command", "Jpeg").Put("SendValue", new WebADNuke.Web.WebMeta().Put("Id", itemId));
-                  .Command("Design", "Image", new UMC.Web.WebMeta().Put("id", itemId).Put("seq", "1", "type", "jpg"));
+                  .Command("Design", "Picture", new UMC.Web.WebMeta().Put("id", itemId).Put("seq", "1", "type", "jpg"));
                 }
                 UMC.Data.Utility.Each(pices, dr =>
                  {

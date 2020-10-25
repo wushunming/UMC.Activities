@@ -11,49 +11,6 @@ namespace UMC.Activities
     class DesignBannerActivity : UMC.Web.WebActivity
     {
         bool _editer;
-
-        List<UISlider> Sliders(Guid parentId, List<Design_Item> baners)
-        {
-            var list = new List<UISlider>();
-            var webr = UMC.Data.WebResource.Instance();
-            foreach (var b in baners)
-            {
-                var slider = new UISlider();
-                slider.Src = webr.ResolveUrl(String.Format("{1}{0}/1/0.jpg!slider", b.Id, UMC.Data.WebResource.ImageResource));
-                if (_editer)
-                {
-                    slider.Click = new UIClick(new UMC.Web.WebMeta().Put("Id", b.Id)) { Command = "Design", Model = "Store" };
-                }
-                else
-                {
-                    if (String.IsNullOrEmpty(b.Click) == false)
-                    {
-
-                        slider.Click = UMC.Data.JSON.Deserialize<UIClick>(b.Click);
-                    }
-
-                }
-                list.Add(slider);
-            }
-            if (list.Count == 0 && _editer)
-            {
-                list.Add(new UISlider() { Click = new UIClick(parentId.ToString()) { Command = "Design", Model = "Store" } });
-
-            }
-            return list;
-        }
-
-        public UIClick Click(Design_Item item)
-        {
-            if (_editer)
-            {
-                return new UIClick(item.Id.ToString()) { Command = "Design", Model = "Store" };
-            }
-            else
-            {
-                return Data.JSON.Deserialize<UIClick>(item.Click);
-            }
-        }
         public override void ProcessActivity(WebRequest request, WebResponse response)
         {
             var user = UMC.Security.Identity.Current;
@@ -68,7 +25,6 @@ namespace UMC.Activities
                        .Where.And().Equal(new Design_Item { design_id = designId, Type = UIDesigner.StoreDesignTypeBanners, for_id = Guid.Empty }).Entities.Single();
                 if (item == null)
                 {
-
                     item = new Design_Item { Id = Guid.NewGuid(), Type = UIDesigner.StoreDesignTypeBanners, for_id = Guid.Empty, design_id = designId };
                     Database.Instance().ObjectEntity<Design_Item>().Insert(item);
                 }
@@ -103,18 +59,17 @@ namespace UMC.Activities
             var webr = UMC.Data.WebResource.Instance();
             foreach (var b in items.FindAll(g => g.for_id == parent.Id))
             {
-                var slider = new UISlider();
-                slider.Src = webr.ResolveUrl(String.Format("{1}{0}/1/0.jpg!slider", b.Id, UMC.Data.WebResource.ImageResource));
+                var slider = new WebMeta().Put("src", webr.ResolveUrl(String.Format("{1}{0}/1/0.jpg!slider", b.Id, UMC.Data.WebResource.ImageResource)));
                 if (_editer)
                 {
-                    slider.Click = new UIClick(new UMC.Web.WebMeta().Put("Id", b.Id)) { Command = "Design", Model = "Item" };
+                    slider.Put("click", new UIClick(new UMC.Web.WebMeta().Put("Id", b.Id)) { Command = "Design", Model = "Item" });
                 }
                 else
                 {
                     if (String.IsNullOrEmpty(b.Click) == false)
                     {
 
-                        slider.Click = UMC.Data.JSON.Deserialize<UIClick>(b.Click);
+                        slider.Put("click", UMC.Data.JSON.Deserialize<UIClick>(b.Click));
                     }
 
                 }

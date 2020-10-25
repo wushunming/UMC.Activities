@@ -93,7 +93,7 @@ namespace UMC.Activities
                 if (link.Id.HasValue)
                 {
                     fdlg.AddCheckBox("", "Status", "n").Add("禁用此菜单", "Disable", link.IsDisable == true);
-                    fdlg.AddUIIcon(UIIcon.fa_lock, "权限设置").Command(request.Model, "Auth", link.Id.ToString());
+                    fdlg.AddUIIcon("\uf13e", "权限设置").Command(request.Model, "Auth", link.Id.ToString());
                 }
 
 
